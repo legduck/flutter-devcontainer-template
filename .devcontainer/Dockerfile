@@ -1,9 +1,8 @@
 # Inspired by: https://blog.devops.dev/developing-flutter-applications-inside-a-devcontainer-4b13de5369e2
 
 # --- Builder Stage ---
-FROM --platform=linux/amd64 debian:bookworm-slim AS builder
+FROM debian:bookworm-slim AS builder
 
-# Avoid warnings by switching to noninteractive
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV ANDROID_SDK_ROOT=/android-sdk
@@ -11,70 +10,66 @@ ENV FLUTTER_SDK_ROOT=/flutter
 
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \
-    wget \
-    unzip \
-    xz-utils \
-    openjdk-17-jdk \
-    && apt-get autoremove -y \
-    && apt-get clean -y \
+       curl wget unzip xz-utils ca-certificates openjdk-17-jdk git \
     && rm -rf /var/lib/apt/lists/*
 
-# Download and install Android Command Line Tools
+# Download and install Android Command Line Tools + components
 RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools \
-    && wget -O commandlinetools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" \
-    && unzip commandlinetools.zip -d ${ANDROID_SDK_ROOT}/cmdline-tools \
+    && wget -O /tmp/commandlinetools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" \
+    && unzip -q /tmp/commandlinetools.zip -d ${ANDROID_SDK_ROOT}/cmdline-tools \
     && mv ${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools ${ANDROID_SDK_ROOT}/cmdline-tools/latest \
-    && rm commandlinetools.zip
+    && rm /tmp/commandlinetools.zip
 
-# Accept Android SDK licenses and install necessary components
-RUN yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses && \
-    ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "cmake;3.22.1" "ndk;26.3.11579264" "platform-tools" "platforms;android-35"
+ENV PATH=${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${PATH}
 
-# Download and install Flutter
-RUN mkdir -p ${FLUTTER_SDK_ROOT} \
-    && wget -O flutter.tar.xz "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.29.2-stable.tar.xz" \
-    && tar xf flutter.tar.xz -C ${FLUTTER_SDK_ROOT} --strip-components=1 \
-    && rm flutter.tar.xz
+# Accept licenses and install SDK components
+RUN yes | sdkmanager --licenses \
+    && sdkmanager "platform-tools" \
+                  "platforms;android-35" \
+                  "platforms;android-34" \
+                  "build-tools;35.0.0" \
+                  "build-tools;34.0.0" \
+                  "cmake;3.22.1" \
+                  "ndk;26.3.11579264"
+
+# Flutter SDK (clone only; do not run flutter as root)
+RUN git clone -b stable --depth 1 --filter=blob:none https://github.com/flutter/flutter.git "${FLUTTER_SDK_ROOT}"
 
 # --- Final Stage ---
-FROM --platform=linux/amd64 debian:bookworm-slim AS final
+FROM mcr.microsoft.com/devcontainers/base:debian-12 AS final
 
 ARG USERNAME=vscode
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
 ARG HOME=/home/${USERNAME}
+ARG DEBIAN_FRONTEND=noninteractive
 
 ENV ANDROID_SDK_ROOT=${HOME}/android-sdk
+ENV ANDROID_HOME=${ANDROID_SDK_ROOT}
 ENV FLUTTER_SDK_ROOT=${HOME}/flutter
-ENV PATH=$PATH:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
-ENV PATH=$PATH:${ANDROID_SDK_ROOT}/platform-tools
-ENV PATH=$PATH:${FLUTTER_SDK_ROOT}/bin
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH=${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools:${FLUTTER_SDK_ROOT}/bin:${PATH}
 
-RUN dpkg --add-architecture amd64 \
-    && apt-get update \
+RUN apt-get update \
     && apt-get -y install --no-install-recommends \
-    curl \
-    git \
-    unzip \
-    xz-utils \
-    zip \
-    openjdk-17-jdk \
-    libglu1-mesa \
-    libc6:amd64 \
-    sudo \
-    && apt-get autoremove -y \
-    && apt-get clean -y \
+       curl git unzip xz-utils zip ca-certificates \
+       openjdk-17-jdk libstdc++6 libglu1-mesa sudo \
+       chromium \
+       clang cmake ninja-build pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user
-RUN groupadd --gid ${USER_GID} ${USERNAME} \
-    && useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME} \
-    # [Optional add sudo support if needed in your devcontainer.
-    && echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
-    && chmod 0440 /etc/sudoers.d/${USERNAME}
-
+# Dev Containers base already provides 'vscode' user
 USER ${USERNAME}
 
-# Copy SDKs from the builder stage to the user's home directory
+# Copy SDKs from builder stage into the user home
 COPY --from=builder --chown=${USERNAME}:${USERNAME} /android-sdk ${ANDROID_SDK_ROOT}
 COPY --from=builder --chown=${USERNAME}:${USERNAME} /flutter ${FLUTTER_SDK_ROOT}
+
+# Configure Flutter to use the Android SDK and warm caches (non-fatal)
+RUN flutter config --android-sdk "${ANDROID_SDK_ROOT}" \
+    && flutter precache --android \
+    && flutter doctor -v || true
+
+# Ensure the mounted ~/.bashrc.extra is sourced on every shell (idempotent)
+RUN bash -lc 'FILE="$HOME/.bashrc"; \
+  touch "$FILE"; \
+  grep -qxF "[[ -f ~/.bashrc.extra ]] && source ~/.bashrc.extra" "$FILE" \
+  || echo "[[ -f ~/.bashrc.extra ]] && source ~/.bashrc.extra" >> "$FILE"'

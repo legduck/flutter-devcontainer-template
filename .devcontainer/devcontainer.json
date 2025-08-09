@@ -2,19 +2,19 @@
     "name": "Flutter 4 Android",
     "build": {
         "dockerfile": "Dockerfile",
-        "options": ["--tag", "flutter4android"],
         "args": {
-            "USERNAME": "${localEnv:USER}${localEnv:USERNAME}"
+            "USERNAME": "vscode"
         }
     },
 
     "containerEnv": {
-        "SHELL": "/bin/bash"
+        "SHELL": "/bin/bash",
+        "CHROME_EXECUTABLE": "/usr/bin/chromium"
     },
 
     "mounts": [
-		"source=${localWorkspaceFolder}/.devcontainer/.bashrc,target=/home/${localEnv:USER}${localEnv:USERNAME}/.bashrc.1,readonly,type=bind"
-	],
+        "source=${localWorkspaceFolder}/.devcontainer/.bashrc,target=/home/vscode/.bashrc.extra,readonly,type=bind"
+    ],
 
     "runArgs": [
         "--platform",
@@ -23,16 +23,12 @@
         "${localWorkspaceFolderBasename}_flutter4android_devcontainer"
     ],
 
-    // "initializeCommand": "",
     "onCreateCommand": "bash ./.devcontainer/on-create.sh",
-    // "updateContentCommand": "",
-    // "postCreateCommand": "",
-    // "postStartCommand": "",
     "postAttachCommand": "bash ./.devcontainer/post-attach.sh",
 
-    "waitFor": "postStartCommand",
+    "waitFor": "onCreateCommand",
 
-    "remoteUser": "${localEnv:USER}${localEnv:USERNAME}",
+    "remoteUser": "vscode",
 
     "features": {
         "ghcr.io/devcontainers-extra/features/starship": {},
