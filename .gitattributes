@@ -1,0 +1,5 @@
+# Normalize text files automatically
+* text=auto
+
+# Always use LF for shell scripts (prevents bash CRLF issues in containers)
+*.sh text eol=lf

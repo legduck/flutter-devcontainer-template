@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Ensure scripts are LF-terminated even if edited on Windows hosts (best-effort)
+command -v dos2unix >/dev/null 2>&1 && dos2unix "$0" || true
+
 dart --disable-analytics
 flutter --disable-analytics
 flutter config --no-enable-web
