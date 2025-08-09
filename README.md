@@ -102,6 +102,14 @@ Runs on Windows (WSL2 recommended), MacOS (see note at the end) and Linux (at le
     - Adjusts Git settings for mounted workspaces (Windows-friendly):
         - `core.filemode=false`, `core.autocrlf=true`, marks this repo as a safe directory
 
+## Git over HTTPS with VS Code Credential Manager
+
+This template is designed to work best with Git over HTTPS inside the Dev Container.
+
+- Use an HTTPS remote for this repository (for example, the GitHub URL shown on the repo page).
+- When you push or fetch, VS Code will prompt you to sign in to GitHub and securely store credentials via its built‑in credential manager.
+- If authentication gets stuck, sign out/in from VS Code’s Accounts panel and retry the Git operation to refresh credentials.
+
 ## Task shortcuts (Go Task)
 
 This repo uses [Task](https://taskfile.dev/) inside the container. Useful commands:
