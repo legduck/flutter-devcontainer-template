@@ -97,8 +97,8 @@ Runs on Windows (WSL2 recommended), MacOS (see note at the end) and Linux (at le
     - Disables web and Linux desktop targets: `flutter config --no-enable-web` and `--no-enable-linux-desktop`
     - Runs `flutter doctor`
     - Initializes Starship prompt in your `~/.bashrc`
-- On attach (`.devcontainer/post-attach.sh`):
-    - Runs `flutter pub get`
+- On start (`.devcontainer/post-start.sh`):
+    - Runs `flutter pub get` (non-blocking; no interactive terminal popup)
     - Adjusts Git settings for mounted workspaces (Windows-friendly):
         - `core.filemode=false`, `core.autocrlf=true`, marks this repo as a safe directory
 
