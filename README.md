@@ -59,13 +59,70 @@ Runs on Windows (WSL2 recommended), MacOS (see note at the end) and Linux (at le
 
 ## Included Tools and Features
 
-- Flutter SDK
-- Android SDK and Command Line Tools
-- OpenJDK 17
-- VS Code extensions for Flutter and Dart development
-- Starship prompt
-- Go Task
-- Customizable .bashrc
+- Debian 12 base (Dev Containers)
+- Flutter SDK (stable channel), pre-cached for Android during image build
+- Android SDK and Command Line Tools, including:
+    - platform-tools
+    - platforms: android-35 and android-34
+    - build-tools: 35.0.0 and 34.0.0
+    - CMake 3.22.1
+    - NDK 26.3.11579264
+- OpenJDK 17 (JAVA_HOME set in the container)
+- Chromium installed (CHROME_EXECUTABLE=/usr/bin/chromium)
+- Native build tooling: clang, cmake, ninja, pkg-config
+- VS Code extensions preinstalled: Dart, Flutter, Task, YAML
+- Starship prompt (via devcontainer feature)
+- Go Task (via devcontainer feature)
+- Customizable bash profile: `.devcontainer/.bashrc` is mounted as `~/.bashrc.extra`
+
+> [!NOTE]
+> Web and Linux desktop targets are disabled by default in this devcontainer (you can enable them later with `flutter config`).
+
+## Container configuration highlights
+
+- Architecture: forced to linux/amd64 (see devcontainer runArgs). This matches the IMPORTANT note above for Apple Silicon.
+- Base image: `mcr.microsoft.com/devcontainers/base:debian-12` (final stage)
+- Default user: `vscode`; default shell set to `/bin/bash`
+- Environment variables set:
+    - ANDROID_SDK_ROOT and ANDROID_HOME
+    - FLUTTER_SDK_ROOT
+    - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    - PATH includes: Android cmdline-tools, platform-tools, and `flutter/bin`
+- On first build, the image runs:
+    - `flutter config --android-sdk <sdk path>`
+    - `flutter precache --android`
+    - `flutter doctor -v` (non-fatal if it reports issues during build)
+- On container create (`.devcontainer/on-create.sh`):
+    - Disables Dart/Flutter analytics
+    - Disables web and Linux desktop targets: `flutter config --no-enable-web` and `--no-enable-linux-desktop`
+    - Runs `flutter doctor`
+    - Initializes Starship prompt in your `~/.bashrc`
+- On attach (`.devcontainer/post-attach.sh`):
+    - Runs `flutter pub get`
+    - Adjusts Git settings for mounted workspaces (Windows-friendly):
+        - `core.filemode=false`, `core.autocrlf=true`, marks this repo as a safe directory
+
+## Task shortcuts (Go Task)
+
+This repo uses [Task](https://taskfile.dev/) inside the container. Useful commands:
+
+- Pair device over Wi‑Fi (run once per device):
+
+    ```bash
+    task pair-device -- IP_ADDRESS:PORT
+    ```
+
+- Connect to the device after pairing:
+
+    ```bash
+    task connect-device -- IP_ADDRESS:PORT
+    ```
+
+- List all tasks:
+
+    ```bash
+    task -l
+    ```
 
 That's it! You're now ready to start developing Flutter apps for Android in a consistent and isolated environment.
 
