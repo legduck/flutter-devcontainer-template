@@ -100,7 +100,33 @@ Runs on Windows (WSL2 recommended), MacOS (see note at the end) and Linux (at le
 - On start (`.devcontainer/post-start.sh`):
     - Runs `flutter pub get` (non-blocking; no interactive terminal popup)
     - Adjusts Git settings for mounted workspaces (Windows-friendly):
-        - `core.filemode=false`, `core.autocrlf=true`, marks this repo as a safe directory
+                - `core.filemode=false`, `core.autocrlf=true`, marks this repo as a safe directory
+
+## Dockerfile build args
+
+You can customize the image at build time using these Dockerfile arguments:
+
+- FLUTTER_CHANNEL (default: stable)
+    - Used when FLUTTER_VERSION is not set. Typical values: stable, beta, master.
+- FLUTTER_VERSION (default: empty)
+    - If set to a specific Flutter tag (for example, 3.24.0), the image is pinned to that version and FLUTTER_CHANNEL is ignored.
+- USERNAME (default: vscode)
+    - Linux user inside the final image. If you change this, also update `remoteUser` and any mounts that include the home path in `devcontainer.json`.
+
+Override these in `devcontainer.json` under `build.args`:
+
+```jsonc
+"build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+        "USERNAME": "vscode",
+        "FLUTTER_CHANNEL": "stable",
+        "FLUTTER_VERSION": ""
+    }
+}
+```
+
+Tip: After changing build args, use VS Code’s “Rebuild Container” to apply them.
 
 ## Git over HTTPS with VS Code Credential Manager
 

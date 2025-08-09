@@ -32,8 +32,13 @@ RUN yes | sdkmanager --licenses \
                   "cmake;3.22.1" \
                   "ndk;26.3.11579264"
 
-# Flutter SDK (clone only; do not run flutter as root)
-RUN git clone -b stable --depth 1 --filter=blob:none https://github.com/flutter/flutter.git "${FLUTTER_SDK_ROOT}"
+ARG FLUTTER_CHANNEL=stable
+ARG FLUTTER_VERSION=""  # e.g., 3.24.0; leave empty to use channel tip
+RUN if [ -n "$FLUTTER_VERSION" ]; then \
+      git clone --depth 1 --branch "$FLUTTER_VERSION" --filter=blob:none https://github.com/flutter/flutter.git "$FLUTTER_SDK_ROOT"; \
+    else \
+      git clone --depth 1 --branch "$FLUTTER_CHANNEL" --filter=blob:none https://github.com/flutter/flutter.git "$FLUTTER_SDK_ROOT"; \
+    fi
 
 # --- Final Stage ---
 FROM mcr.microsoft.com/devcontainers/base:debian-12 AS final

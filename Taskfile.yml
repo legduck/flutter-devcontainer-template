@@ -89,3 +89,30 @@ tasks:
       - echo -e '\n\t{{.GREEN}}flutter{{.NC}} doctor\n'
       - echo -e "If you see a green {{.GREEN}}✔︎{{.NC}} next to 'Connected device', you're good to go!"
       - echo
+
+  deps:outdated:
+    desc: Show outdated Dart/Flutter packages
+    summary: |
+      Runs `flutter pub outdated` to list dependencies with newer versions.
+    internal: false
+    silent: false
+    cmds:
+      - flutter pub outdated
+
+  deps:upgrade:safe:
+    desc: Apply compatible upgrades (no breaking changes)
+    summary: |
+      Runs `flutter pub upgrade --major-versions=false` to bump within constraints.
+    internal: false
+    silent: false
+    cmds:
+      - flutter pub upgrade
+
+  deps:upgrade:major:
+    desc: Try major upgrades (may require code changes)
+    summary: |
+      Runs `flutter pub upgrade --major-versions`.
+    internal: false
+    silent: false
+    cmds:
+      - flutter pub upgrade --major-versions
