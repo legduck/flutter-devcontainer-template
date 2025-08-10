@@ -7,4 +7,8 @@ flutter pub get || true
 # Prevent Git noise with mounted volumes
 git config --global core.filemode false || true
 git config --global core.autocrlf true || true
-git config --global --add safe.directory /workspaces/flutter-devcontainer-template || true
+if [ -n "$WORKSPACE_FOLDER" ] && [ -d "$WORKSPACE_FOLDER" ]; then
+	git config --global --add safe.directory "$WORKSPACE_FOLDER" || true
+else
+	git config --global --add safe.directory "/workspaces/$(basename "$(pwd)")" || true
+fi

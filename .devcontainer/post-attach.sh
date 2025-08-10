@@ -7,4 +7,9 @@ flutter pub get
 git config --global core.filemode false || true
 git config --global core.autocrlf true || true
 # Mark the workspace as safe in case ownership differs inside the container.
-git config --global --add safe.directory /workspaces/flutter-devcontainer-template || true
+if [ -n "$WORKSPACE_FOLDER" ] && [ -d "$WORKSPACE_FOLDER" ]; then
+	git config --global --add safe.directory "$WORKSPACE_FOLDER" || true
+else
+	# Fallback to the default devcontainer workspace path if env var is missing
+	git config --global --add safe.directory "/workspaces/$(basename "$(pwd)")" || true
+fi
